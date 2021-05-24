@@ -5,7 +5,7 @@ Various utilities for working with CMD flavoured data transformations.
 ### Install
 
 ```sh
-pip install pip install --no-cache git+git://github.com/GSS-Cogs/cmdtools.git#egg=cmdtools
+pip install --no-cache git+git://github.com/GSS-Cogs/cmdtools.git#egg=cmdtools
 ```
 
 ### Environment Variables
