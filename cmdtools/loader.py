@@ -2,14 +2,18 @@ import datetime
 import json
 import os
 import requests
-from requests import RequestException
 
-class CmdApi:
+class CmdLoader:
 
-    def __init__(self, credentials, dataset_id, v4, api_root='https://publishing.develop.onsdigital.co.uk'):
+    def __init__(self, dataset_id, v4):
 
-        # Note: using a kwarg so we can change it whenever without rewriting anything
-        self.api_root = api_root
+        # Authentication
+        self.email = os.getenv('FLORENCE_USERMAME', None)
+        self.password = os.getenv('FLORENCE_PASSWORD', None)
+        if not self.email or not self.password:
+            raise ValueError(f'You need to provide a florence username and password '
+                'to use CmdLoader. These must be exported as the envionrment variables'
+                ' FLORENCE_USERMAME and FLORENCE_PASSWORD')
 
         # Set endpoints we're going to need
         self.zebedee_url = f'{self.api_root}/zebedee/login'
@@ -17,9 +21,11 @@ class CmdApi:
         self.upload_url = f'{self.api_root}/upload'
         self.dataset_instances_api_url = f'{self.api_root}/dataset/instances'
         self.dataset_jobs_api_url = f'{self.api_root}/dataset/jobs'
-        self.base_s3_url = 'https://s3-eu-west-1.amazonaws.com/ons-dp-develop-publishing-uploaded-datasets'
 
-        self.credentials = credentials
+        self.base_s3_url = os.getenv('CMD_DATASET_UPLOAD_BUCKET', 
+            'https://s3-eu-west-1.amazonaws.com/ons-dp-develop-publishing-uploaded-datasets')
+        self.api_root = os.get_env('CMD_API_ROOT', 'https://publishing.develop.onsdigital.co.uk')
+
         self.dataset_id = dataset_id
         self.v4 = v4
 
@@ -27,6 +33,7 @@ class CmdApi:
         
         self.recipe_api_limit = 1000
         self.dataset_jobs_api_limit = 1000
+
 
     # Note: We're wrapping requests.get so if we want to add clever things like retries and
     # exponential backoff, we only need to add it in one place.
@@ -40,12 +47,14 @@ class CmdApi:
     def _post(self, url, **kwargs):
         """Get things with requests"""
         return requests.post(url, kwargs)
-        
+
+
     # Note: We're wrapping requests.put so if we want to add clever things like retries and
     # exponential backoff, we only need to add it in one place.
     def _put(self, url, **kwargs):
         """Get things with requests"""
         return requests.put(url, kwargs)
+
 
     def set_access_token(self): # create inputs for email and password
         ### setting access_token ###
@@ -53,12 +62,7 @@ class CmdApi:
         credentials should be a path to file containing florence login email and password
         '''
         
-        with open(self.credentials, 'r') as json_file:
-            credentials_json = json.load(json_file)
-        
-        email = credentials_json['email']
-        password = credentials_json['password']
-        login = {"email":email, "password":password}
+        login = {"email": self.email, "password": self.password}
         
         r = self._post(self.zebedee_url, json=login, verify=False)
         if r.status_code == 200:
@@ -314,6 +318,7 @@ class CmdApi:
             return job_info_dict
         else:
             raise Exception(f'/dataset/jobs/{job_id} returned error {r.status_code}')
+
 
     def post_v4_to_s3(self):
         '''
