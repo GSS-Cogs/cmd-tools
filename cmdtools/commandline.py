@@ -2,23 +2,22 @@ import sys
 
 from cmdtools.loader import CmdLoader
 
-def cmdload():
+def cmdload(dataset_id, v4):
     """
     Wrapper for calling loader.CmdLoader from the command line
     """
+    cmd_loader = CmdLoader(dataset_id, v4)
+    cmd_loader.upload_data_to_florence()
 
-    # TODO - should probably use an argparser
-
-    credentials = sys.argv[1],
-    dataset_id = sys.argv[2],
-    v4 = sys.argv[3]
+if __name__ == "__main__":
+    
+    dataset_id = sys.argv[1],
+    v4 = sys.argv[2]
 
     print(f'''Running CmdLoader with arguments:
     
-    credentials: {credentials}
     dataset id: {dataset_id}
     path to v4: {v4}
     ''')
-
-    cmd_loader = CmdLoader(credentials, dataset_id, v4)
-    cmd_loader.upload_data_to_florence()
+    
+    cmdload(dataset_id, v4)
