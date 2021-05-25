@@ -29,7 +29,7 @@ To use within python use:
 
 ```python
 from cmdtools import CmdUploader
-cmdapi = CmdUploader(<path_to_credentials>, <dataset_id>, <path_to_v4>)
+cmdapi = CmdUploader(<dataset_id>, <path_to_v4>)
 cmdapi.upload_data_to_florence()
 ```
 
