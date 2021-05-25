@@ -2,6 +2,13 @@ import sys
 
 from cmdtools.loader import CmdLoader
 
+# TODO:
+# Not in use yet (coudlt remember how) but we'll need to
+# make some tweaks to setup to py to call this from the
+# command line.
+# E.g "cmdload <dataset_id> <v4>" with no reference to
+# python is the end goal here. App not module.
+
 def cmdload(dataset_id, v4):
     """
     Wrapper for calling loader.CmdLoader from the command line
