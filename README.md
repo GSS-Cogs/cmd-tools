@@ -25,16 +25,16 @@ To set them permenently add these export lines to either `~/.zshrc` or `~/.bashr
 
 ### CMD Uploader
 
-Once installed, the cmd loader can be run from the command line via:
-
-```sh
-cmdload <dataset_id> <path_to_v4>
-```
-
 To use within python use:
 
 ```python
 from cmdtools import CmdUploader
 cmdapi = CmdUploader(<path_to_credentials>, <dataset_id>, <path_to_v4>)
 cmdapi.upload_data_to_florence()
+```
+
+Once installed, the cmd loader can be run from the command line via:
+
+```sh
+# TODO
 ```
