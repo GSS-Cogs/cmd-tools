@@ -28,9 +28,9 @@ To set them permenently add these export lines to either `~/.zshrc` or `~/.bashr
 To use within python use:
 
 ```python
-from cmdtools import CmdUploader
-cmdapi = CmdUploader(<dataset_id>, <path_to_v4>)
-cmdapi.upload_data_to_florence()
+from cmdtools import CmdLoader
+cmdloader = CmdLoader(<dataset_id>, <path_to_v4>)
+cmdloader.upload_data_to_florence()
 ```
 
 Once installed, the cmd loader can be run from the command line via:
