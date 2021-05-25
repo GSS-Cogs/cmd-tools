@@ -2,7 +2,7 @@ from distutils.core import setup
 setup(
   name = 'cmdtools',
   packages = ['cmdtools'],
-  version = '1.0.1',
+  version = '0.0.1',
   description = 'Tools for processing and uploading cmd datasets',
   author = 'James Bryant',
   author_email = 'james.bryant@ons.gov.uk',
