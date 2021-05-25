@@ -10,9 +10,4 @@ setup(
   download_url = 'https://github.com/mikeAdamss/cmd-tools/archive/0.1.tar.gz',
   keywords = ['databaker', 'pandas', 'api', 'cmd'],
   classifiers = [],
-  entry_points={
-      'console_scripts': [
-          'cmdtools.commandline:cmdload'
-      ]
-  },
 )
