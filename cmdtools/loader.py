@@ -16,7 +16,7 @@ class CmdLoader:
 
         self.base_s3_url = os.getenv('CMD_DATASET_UPLOAD_BUCKET', 
             'https://s3-eu-west-1.amazonaws.com/ons-dp-develop-publishing-uploaded-datasets')
-        self.api_root = os.get_env('CMD_API_ROOT', 'https://publishing.develop.onsdigital.co.uk')
+        self.api_root = os.getenv('CMD_API_ROOT', 'https://publishing.develop.onsdigital.co.uk')
 
         # Set endpoints we're going to need
         self.zebedee_url = f'{self.api_root}/zebedee/login'
