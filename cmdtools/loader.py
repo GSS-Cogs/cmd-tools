@@ -1,5 +1,4 @@
 import datetime
-import json
 import os
 import requests
 
@@ -7,7 +6,7 @@ class CmdLoader:
 
     def __init__(self, dataset_id, v4):
 
-        # Authentication
+        # Authentication details
         self.email = os.getenv('FLORENCE_USERMAME', None)
         self.password = os.getenv('FLORENCE_PASSWORD', None)
         if not self.email or not self.password:
@@ -15,16 +14,16 @@ class CmdLoader:
                 'to use CmdLoader. These must be exported as the envionrment variables'
                 ' FLORENCE_USERMAME and FLORENCE_PASSWORD')
 
+        self.base_s3_url = os.getenv('CMD_DATASET_UPLOAD_BUCKET', 
+            'https://s3-eu-west-1.amazonaws.com/ons-dp-develop-publishing-uploaded-datasets')
+        self.api_root = os.get_env('CMD_API_ROOT', 'https://publishing.develop.onsdigital.co.uk')
+
         # Set endpoints we're going to need
         self.zebedee_url = f'{self.api_root}/zebedee/login'
         self.recipe_api_url = f'{self.api_root}/recipes'
         self.upload_url = f'{self.api_root}/upload'
         self.dataset_instances_api_url = f'{self.api_root}/dataset/instances'
         self.dataset_jobs_api_url = f'{self.api_root}/dataset/jobs'
-
-        self.base_s3_url = os.getenv('CMD_DATASET_UPLOAD_BUCKET', 
-            'https://s3-eu-west-1.amazonaws.com/ons-dp-develop-publishing-uploaded-datasets')
-        self.api_root = os.get_env('CMD_API_ROOT', 'https://publishing.develop.onsdigital.co.uk')
 
         self.dataset_id = dataset_id
         self.v4 = v4
@@ -325,36 +324,84 @@ class CmdLoader:
         Uploading a v4 to the s3 bucket
         v4 is full file path
         '''
-        csv_size = str(os.path.getsize(self.v4)) # Size of the csv
-        timestamp = datetime.datetime.now() # to be used as unique resumableIdentifier
+        # properties that do not change for the upload
+        csv_total_size = str(os.path.getsize(self.v4)) # size of the whole csv
+        timestamp = datetime.datetime.now() # to be ued as unique resumableIdentifier
         timestamp = datetime.datetime.strftime(timestamp, '%d%m%y%H%M%S')
         file_name = self.v4.split("/")[-1]
         
         headers = {'X-Florence-Token': self.access_token}
-        with open(self.v4, 'rb') as f:
-            # Inlcude the opened file in the request
-            files = {'file': f}
-            # Params that can be added to the request
-            # Uploading it as a single chunk of the exact size of the file in question
-            params = {
-                    "resumableType": "text/csv",
-                    "resumableChunkNumber": 1,
-                    "resumableCurrentChunkSize": csv_size,
-                    "resumableTotalSize": csv_size,
-                    "resumableChunkSize": csv_size,
-                    "resumableIdentifier": timestamp + '-' + file_name.replace('.', ''),
-                    "resumableFilename": file_name,
-                    "resumableRelativePath": ".",
-                    "resumableTotalChunks": 1
-            }
-
-            r = self._post(self.upload_url, headers=headers, params=params, files=files, verify=False)
-            if r.status_code != 200:  #
-                raise Exception(f'{self.upload_url} returned error {r.status_code}')
         
-        s3_url = f'{self.base_s3_url}/{params["resumableIdentifier"]}'
-        return s3_url
+        # chunk up the data
+        temp_files = self.create_temp_chunks(self.v4) # list of temporary files
+        total_number_of_chunks = len(temp_files)
+        chunk_number = 1 # starting chunk number
+        
+        # uploading each chunk
+        for chunk_file in temp_files:
+            csv_size = str(os.path.getsize(chunk_file)) # Size of the chunk
 
+            with open(chunk_file, 'rb') as f:
+                files = {'file': f} # Inlcude the opened file in the request
+                
+                # Params that are added to the request
+                params = {
+                        "resumableType": "text/csv",
+                        "resumableChunkNumber": chunk_number,
+                        "resumableCurrentChunkSize": csv_size,
+                        "resumableTotalSize": csv_total_size,
+                        "resumableChunkSize": csv_size,
+                        "resumableIdentifier": timestamp + '-' + file_name.replace('.', ''),
+                        "resumableFilename": file_name,
+                        "resumableRelativePath": ".",
+                        "resumableTotalChunks": total_number_of_chunks
+                }
+                
+                # making the POST request
+                r = self._post(self.upload_url, headers=headers, params=params, files=files, verify=False)
+                if r.status_code != 200:  
+                    raise Exception('{} returned error {}'.format(self.upload_url, r.status_code))
+                    
+                chunk_number += 1 # moving onto next chunk number
+            
+        s3_url = f'{self.base_s3_url}/{params["resumableIdentifier"]}'
+        
+        # delete temp files
+        self.delete_temp_chunks(temp_files)
+        
+        return s3_url
+        
+
+    def create_temp_chunks(v4):
+        '''
+        Chunks up the data into text files
+        returns number of chunks
+        chunks created in same directory as v4
+        Will be deleted after upload
+        '''
+        chunk_size = 5 * 1024 * 1024
+        file_number = 1
+        location = '/'.join(v4.split('/')[:-1]) + '/'
+        temp_files = []
+        with open(v4, 'rb') as f:
+            chunk = f.read(chunk_size)
+            while chunk:
+                file_name = location + 'temp-file-part-' + str(file_number)
+                with open(file_name, 'wb') as chunk_file:
+                    chunk_file.write(chunk)
+                    temp_files.append(file_name)
+                file_number += 1
+                chunk = f.read(chunk_size)
+        return temp_files 
+
+
+    def delete_temp_chunks(temporary_files):
+        '''
+        Deletes the temporary chunks that were uploaded
+        '''
+        for file in temporary_files:
+            os.remove(file)
+    
 
     def upload_data_to_florence(self):
         '''Uploads v4 to florence'''
