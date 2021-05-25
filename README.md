@@ -16,7 +16,7 @@ The upload tool from cmdtools uses the following envionrment variables.
 |---------------------------|------------------------------------|---------------|
 | FLORENCE_USERMAME         | A valid florence username          | NONE, load will fail  |
 | FLORENCE_PASSWORD         | The password for this username     | NONE, load will fail  |
-| CMD_DATASET_UPLOAD_BUCKET | The                                | https://s3-eu-west-1.amazonaws.com/ons-dp-develop-publishing-uploaded-datasets |
+| CMD_DATASET_UPLOAD_BUCKET | The bucket we're uplaoding v4 files to | https://s3-eu-west-1.amazonaws.com/ons-dp-develop-publishing-uploaded-datasets |
 | CMD_API_ROOT | The api root for the environment in question | https://publishing.develop.onsdigital.co.uk |
 
 To ser envionment variables export them via, eg `export FLORENCE_USERMAME=<username>`.
