@@ -7,7 +7,7 @@ setup(
   author = 'James Bryant',
   author_email = 'james.bryant@ons.gov.uk',
   url = 'https://github.com/mikeAdamss/cmd-tools',
-  download_url = 'https://github.com/mikeAdamss/cmd-tools/archive/0.0.1.tar.gz',
+  download_url = 'https://github.com/mikeAdamss/cmd-tools/archive/0.1.tar.gz',
   keywords = ['databaker', 'pandas', 'api', 'cmd'],
   classifiers = [],
   entry_points={
