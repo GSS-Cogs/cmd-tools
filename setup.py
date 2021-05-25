@@ -14,5 +14,5 @@ setup(
       'console_scripts': [
           'cmdtools.commandline:cmdload'
       ]
-  }
+  },
 )
