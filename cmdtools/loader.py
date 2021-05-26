@@ -7,12 +7,12 @@ class CmdLoader:
     def __init__(self, dataset_id, v4):
 
         # Authentication details
-        self.email = os.getenv('FLORENCE_USERMAME', None)
+        self.email = os.getenv('FLORENCE_USERNAME', None)
         self.password = os.getenv('FLORENCE_PASSWORD', None)
         if not self.email or not self.password:
             raise ValueError(f'You need to provide a florence username and password '
                 'to use CmdLoader. These must be exported as the envionrment variables'
-                ' FLORENCE_USERMAME and FLORENCE_PASSWORD')
+                ' FLORENCE_USERNAME and FLORENCE_PASSWORD')
 
         self.base_s3_url = os.getenv('CMD_DATASET_UPLOAD_BUCKET', 
             'https://s3-eu-west-1.amazonaws.com/ons-dp-develop-publishing-uploaded-datasets')
