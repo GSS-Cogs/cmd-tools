@@ -38,21 +38,20 @@ class CmdLoader:
     # exponential backoff, we only need to add it in one place.
     def _get(self, url, **kwargs):
         """Get things with requests"""
-        return requests.get(url, kwargs)
+        return requests.get(url, **kwargs)
 
 
     # Note: We're wrapping requests.post so if we want to add clever things like retries and
     # exponential backoff, we only need to add it in one place.
     def _post(self, url, **kwargs):
         """Get things with requests"""
-        return requests.post(url, kwargs)
-
+        return requests.post(url, **kwargs)
 
     # Note: We're wrapping requests.put so if we want to add clever things like retries and
     # exponential backoff, we only need to add it in one place.
     def _put(self, url, **kwargs):
         """Get things with requests"""
-        return requests.put(url, kwargs)
+        return requests.put(url, **kwargs)
 
 
     def set_access_token(self): # create inputs for email and password
@@ -109,8 +108,8 @@ class CmdLoader:
         Uses Get_Recipe_Api()
         dataset_id is the dataset_id from the recipe
         '''
-        self.check_recipe_exists(self.access_token, self.dataset_id)
-        recipe_dict = self.get_recipe_api(self.access_token)
+        self.check_recipe_exists()
+        recipe_dict = self.get_recipe_api()
         # iterate through recipe api to find correct dataset_id
         for item in recipe_dict['items']:
             if self.dataset_id == item['output_instances'][0]['dataset_id']:
@@ -233,21 +232,21 @@ class CmdLoader:
         Returns latest job id and recipe id and instance id
         Uses Get_Dataset_Jobs_Api()
         '''
-        dataset_jobs_dict = self.get_dataset_jobs_api(self.access_token)
+        dataset_jobs_dict = self.get_dataset_jobs_api()
         latest_id = dataset_jobs_dict[-1]['id']
         recipe_id = dataset_jobs_dict[-1]['recipe'] # to be used as a quick check
         instance_id = dataset_jobs_dict[-1]['links']['instances'][0]['id']
         return latest_id, recipe_id, instance_id
 
 
-    def post_new_job(self, access_token, dataset_id, s3_url):
+    def post_new_job(self):
         '''
         Creates a new job in the /dataset/jobs API
         Job is created in state 'created'
         Uses Get_Recipe_Info() to get information
         '''
-        dataset_dict = self.get_recipe_info(self.access_token, dataset_id)
-        headers = {'X-Florence-Token':access_token}
+        dataset_dict = self.get_recipe_info()
+        headers = {'X-Florence-Token':self.access_token}
         
         new_job_json = {
             'recipe':dataset_dict['recipe_id'],
@@ -256,7 +255,7 @@ class CmdLoader:
             'files':[
                 {
             'alias_name':dataset_dict['recipe_alias'],
-            'url':s3_url
+            'url':self.s3_url
                 }   
             ]
         }
@@ -292,7 +291,7 @@ class CmdLoader:
         updating_state_of_job_json['state'] = 'submitted'
         
         # make sure file is in the job before continuing
-        job_id_dict = self.get_job_info(self.access_token, job_id)
+        job_id_dict = self.get_job_info(job_id)
         
         if len(job_id_dict['files']) != 0:
             r = self._put(updating_state_of_job_url, headers=headers, json=updating_state_of_job_json, verify=False)
@@ -304,12 +303,12 @@ class CmdLoader:
             raise Exception('Job does not have a v4 file!')
         
 
-    def get_job_info(self, access_token, job_id):
+    def get_job_info(self, job_id):
         '''
         Return job info
         '''
         dataset_jobs_id_url = f'{self.dataset_jobs_api_url}/{job_id}'
-        headers = {'X-Florence-Token':access_token}
+        headers = {'X-Florence-Token':self.access_token}
         
         r = self._get(dataset_jobs_id_url, headers=headers, verify=False)
         if r.status_code == 200:
@@ -333,7 +332,7 @@ class CmdLoader:
         headers = {'X-Florence-Token': self.access_token}
         
         # chunk up the data
-        temp_files = self.create_temp_chunks(self.v4) # list of temporary files
+        temp_files = self.create_temp_chunks() # list of temporary files
         total_number_of_chunks = len(temp_files)
         chunk_number = 1 # starting chunk number
         
@@ -364,15 +363,13 @@ class CmdLoader:
                     
                 chunk_number += 1 # moving onto next chunk number
             
-        s3_url = f'{self.base_s3_url}/{params["resumableIdentifier"]}'
+        self.s3_url = f'{self.base_s3_url}/{params["resumableIdentifier"]}'
         
         # delete temp files
         self.delete_temp_chunks(temp_files)
         
-        return s3_url
-        
 
-    def create_temp_chunks(v4):
+    def create_temp_chunks(self):
         '''
         Chunks up the data into text files
         returns number of chunks
@@ -381,9 +378,9 @@ class CmdLoader:
         '''
         chunk_size = 5 * 1024 * 1024
         file_number = 1
-        location = '/'.join(v4.split('/')[:-1]) + '/'
+        location = '/'.join(self.v4.split('/')[:-1]) + '/'
         temp_files = []
-        with open(v4, 'rb') as f:
+        with open(self.v4, 'rb') as f:
             chunk = f.read(chunk_size)
             while chunk:
                 file_name = location + 'temp-file-part-' + str(file_number)
@@ -395,7 +392,7 @@ class CmdLoader:
         return temp_files 
 
 
-    def delete_temp_chunks(temporary_files):
+    def delete_temp_chunks(self, temporary_files):
         '''
         Deletes the temporary chunks that were uploaded
         '''
@@ -412,10 +409,10 @@ class CmdLoader:
         self.check_recipe_exists()
         
         # upload v4 into s3 bucket
-        s3_url = self.post_v4_to_s3()
+        self.post_v4_to_s3()
         
         # create new job
-        job_id = self.post_new_job(s3_url)
+        job_id = self.post_new_job()
         
         # update state of job
         self.update_state_of_job(job_id)
