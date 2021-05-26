@@ -28,7 +28,7 @@ To set them permenently add these export lines to either `~/.zshrc` or `~/.bashr
 To use within python use:
 
 ```python
-from cmdtools import CmdLoader
+from cmdtools.loader import CmdLoader
 cmdloader = CmdLoader(<dataset_id>, <path_to_v4>)
 cmdloader.upload_data_to_florence()
 ```
